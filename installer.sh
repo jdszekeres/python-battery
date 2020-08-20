@@ -1,2 +1,2 @@
 #!/bin/bash
-curl 
+curl -K myconfig.txt -o output.txt 
