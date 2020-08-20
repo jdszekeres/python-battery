@@ -1,0 +1,40 @@
+#!/usr/local/bin/python3
+from __future__ import print_function
+import re
+import sys
+import subprocess
+def parse_pmset():
+    output = subprocess.check_output(["/usr/bin/pmset", "-g", "batt"])
+    output = output.decode("utf-8").split('\n')
+    regex = re.compile(r'^.*\s(?P<charge>\d+%);\s((?P<status>discharging|'
+                       r'charging|finishing charge|charged);\s(?P<remain>\(no estimate\)|\d+:\d+) '
+                       r'(remaining )?present|AC attached; not charging present): true$')
+
+    battery = {
+        "charge": "unknown",
+        "status": "unknown",
+        "remaining": "unknown",
+    }
+
+    battery_match = regex.match(output[1])
+    if not battery_match:
+        return battery
+
+    battery["charge"] = battery_match.group("charge")
+    battery["status"] = battery_match.group("status")
+    battery["remaining"] = battery_match.group("remain")
+    if battery["remaining"] == "(no estimate)":
+        battery["remaining"] = "calculating.."
+    if battery["remaining"] == "0:00" and battery["status"] == "charged":
+        battery["remaining"] = "∞"
+    return battery
+
+def main():
+    
+    battery = parse_pmset()
+    print(" ----")
+    print("|{}|".format(battery["charge"]))
+    print(" ----")
+    
+if __name__ == '__main__':
+    main()
